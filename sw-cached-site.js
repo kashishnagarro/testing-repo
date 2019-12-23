@@ -1,29 +1,14 @@
-const currentCacheName = 'v1';
-
-cacheAssets = [
-    'index.html',
-    'about.html',
-    '/js/main.js',
-    '/css/style.css'
-];
+const currentCacheName = 'v2';
 
 //call install event
 self.addEventListener('install', (e) => {
-    console.log("SW: Installed site");
+    console.log("SW: Installed");
 
-    e.waitUntil(
-        caches.open(currentCacheName)
-            .then(cache => {
-                console.log("caching assets");
-                cache.addAll(cacheAssets);
-            })
-            .then(() => self.skipWaiting())
-    );
 });
 
 // activate event
 self.addEventListener('activate', (e) => {
-    console.log("SW: Activated site");
+    console.log("SW: Activated");
 
     //remove unwanted caches
     e.waitUntil(
@@ -46,7 +31,19 @@ self.addEventListener('fetch', e => {
 
     e.respondWith(
         // when there is failure for request then return response from cache
-        fetch(e.request).catch(() =>
-            caches.match(e.request))
+        fetch(e.request)
+            .then(res => {
+                //Make copy of response
+                const resClone = res.clone();
+                //Open cache
+                caches.open(currentCacheName)
+                    .then(cache => {
+                        // add response to cache
+                        cache.put(e.request, resClone);
+                    });
+
+                return res;
+            })
+            .catch(() => caches.match(e.request).then(res => res))
     );
 });
